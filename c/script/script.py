@@ -12,39 +12,47 @@ all_colors = list(mcolors.CSS4_COLORS.keys())
 colors = [all_colors[i] for i in np.linspace(10, len(all_colors) - 1, 20).astype(int)]
 
 
+
+#Change parameters here when optimal found
+
+default_buffer_depth = 4
+default_config_file = "8x8.yaml"
 default_hotspotsIDs = ['1','2','3','4','9','10','11','12']
+default_routing = "XY"
+default_topology = "MESH"
+default_buffer_selection = "RANDOM"
 
 # Define a function to generate the command
-def gen_command(filename, sim, packet_rate,percentage, hotspotsIDs, buffer = 4,topology = "MESH", routing = "XY"):
+def gen_command(filename, sim, packet_rate,percentage, hotspotsIDs, buffer = 4,topology = "MESH", routing = "XY", buffer_selection = "RANDOM"):
     base_cmd = "cd ../Script/../../noxim/bin/ && ./noxim -config"
     base_file = "../config_examples/"
-    command = base_cmd + " " + base_file + filename + " -sim " + str(sim) + " -pir " + str(packet_rate) + " poisson " + " -buffer " + str(buffer) + " -routing " + str(routing) + " -topology " + str(topology) 
+    command = base_cmd + " " + base_file + filename + " -sim " + str(sim) + " -pir " + str(packet_rate) + " poisson " + " -buffer " + str(buffer) + " -routing " + str(routing) + " -topology " + str(topology) + " -sel " +str(buffer_selection)
 
     for hotspotID in hotspotsIDs:
          command = command + " -hs " + str(hotspotID) + " " +str(percentage)
     
-        
     print("-----------------------------------")
     print(command)
     print("-----------------------------------")
     return command
 
 
-
-def get_results(packet_rate,cycles,hotspot, percentage ,config, config_name = None,hotspot_config = default_hotspotsIDs, file = "8x8.yaml",):
+def get_results(packet_rate,cycles,hotspot, percentage ,config, config_name = None):
     # Generate the command and run it, capturing output in a variable
     
     #Fix default params
     if config_name == None:
-        command = gen_command("8x8.yaml", cycles, packet_rate, percentage,)
+        command = gen_command(default_config_file, cycles, packet_rate, percentage,default_hotspotsIDs,default_buffer_depth,default_topology,default_routing,default_buffer_selection)
     elif config_name == "buffer":
-        command = gen_command("8x8.yaml", cycles, packet_rate, percentage,hotspot_config, config)
+        command = gen_command(default_config_file, cycles, packet_rate, percentage,default_hotspotsIDs, config,default_topology,default_routing,default_buffer_selection)
     elif config_name == "topology":
-        command = gen_command("8x8.yaml",config, cycles, packet_rate,percentage, hotspot_config, 4, config)
+        command = gen_command(default_config_file, cycles, packet_rate,percentage, default_hotspotsIDs, default_buffer_depth, config,default_routing,default_buffer_selection)
     elif config_name == "routing":
-        command = gen_command("8x8.yaml", cycles, packet_rate, percentage,hotspot_config, 4, "MESH", config)
+        command = gen_command(default_config_file, cycles, packet_rate, percentage,default_hotspotsIDs, default_buffer_depth, default_topology, config,default_buffer_selection)
     elif config_name == "hotspot":
-        command = gen_command("8x8.yaml", cycles, packet_rate, percentage,hotspot_config,4, "MESH", "XY")
+        command = gen_command(default_config_file, cycles, packet_rate, percentage,config,default_buffer_depth, default_topology, default_routing,default_buffer_selection)
+    elif config_name == 'sel':
+        command = gen_command(default_config_file, cycles, packet_rate, percentage,config,default_buffer_depth, default_topology, default_routing,config)
     try:
         output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
         print(output)
@@ -82,9 +90,9 @@ def get_results(packet_rate,cycles,hotspot, percentage ,config, config_name = No
 
 
 
-def subplotfunchold(colour, axs, locx,locy, x,y,xlabel, ylabel,title,config,colours):
+def subplotfunchold(colour, axs, locx,locy, x,y,xlabel, ylabel,title,config,colours,config_labels):
     for index, series in enumerate(y):  
-      axs[locx,locy].plot(x,series, 'o-',color = colours[index], label=str(config[index]))
+      axs[locx,locy].plot(x,series, 'o-',color = colours[index], label=str(config_labels[index]))
       axs[locx,locy].set_xlabel(xlabel)
       axs[locx,locy].set_ylabel(ylabel)
       axs[locx,locy].set_title(title)
@@ -92,20 +100,20 @@ def subplotfunchold(colour, axs, locx,locy, x,y,xlabel, ylabel,title,config,colo
 
       # axs[locx, locy].plot(x, new_y,  'o-',color = colour)
 
-def plotresults(pir_rates,global_average_delay_array,network_throughput_array,max_delay_array,total_energy_array,dynamic_energy_array,static_energy_array,config,colours):
+def plotresults(pir_rates,global_average_delay_array,network_throughput_array,max_delay_array,total_energy_array,dynamic_energy_array,static_energy_array,config,colours,config_labels):
   fig, axs = plt.subplots(2, 3, figsize=(15, 10))
-  subplotfunchold('red',axs,0,0,pir_rates, global_average_delay_array, 'Packet Injection Rate', 'Global Average Delay (cycles)', 'Plot of Global Average Delay vs PIR',config,colours)
-  subplotfunchold('pink',axs,0,1,pir_rates, network_throughput_array, 'Packet Injection Rate', 'Network Throughput (flits/cycle)', 'Plot of Network Throughput vs PIR',config,colours)
-  subplotfunchold('purple',axs,0,2,pir_rates, max_delay_array, 'Packet Injection Rate', 'Max delay (cycles))', 'Plot of Max delay vs PIR',config,colours)
-  subplotfunchold('blue',axs,1,0,pir_rates, total_energy_array, 'Packet Injection Rate', 'Total energy (J)', 'Plot of Total energy vs PIR',config,colours)
-  subplotfunchold('green', axs,1,1,pir_rates, dynamic_energy_array, 'Packet Injection Rate', 'Dynamic energy (J)', 'Plot of Dynamic energy vs PIR',config,colours)
-  subplotfunchold('orange',axs,1,2,pir_rates, static_energy_array, 'Packet Injection Rate', 'Static energy (J)', 'Plot of Static energy vs PIR',config,colours)
+  subplotfunchold('red',axs,0,0,pir_rates, global_average_delay_array, 'Packet Injection Rate', 'Global Average Delay (cycles)', 'Plot of Global Average Delay vs PIR',config,colours,config_labels)
+  subplotfunchold('pink',axs,0,1,pir_rates, network_throughput_array, 'Packet Injection Rate', 'Network Throughput (flits/cycle)', 'Plot of Network Throughput vs PIR',config,colours,config_labels)
+  subplotfunchold('purple',axs,0,2,pir_rates, max_delay_array, 'Packet Injection Rate', 'Max delay (cycles))', 'Plot of Max delay vs PIR',config,colours,config_labels)
+  subplotfunchold('blue',axs,1,0,pir_rates, total_energy_array, 'Packet Injection Rate', 'Total energy (J)', 'Plot of Total energy vs PIR',config,colours,config_labels)
+  subplotfunchold('green', axs,1,1,pir_rates, dynamic_energy_array, 'Packet Injection Rate', 'Dynamic energy (J)', 'Plot of Dynamic energy vs PIR',config,colours,config_labels)
+  subplotfunchold('orange',axs,1,2,pir_rates, static_energy_array, 'Packet Injection Rate', 'Static energy (J)', 'Plot of Static energy vs PIR',config,colours,config_labels)
   plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.3, hspace=0.3)
   plt.show()
 
 
 
-def run_simulation(configs,config_name,pir_rates,colours, hotspot_config = default_hotspotsIDs):
+def run_simulation(configs,config_name, config_labels, pir_rates,colours):
     global_average_delay_array = []
     network_throughput_array = []
     total_energy_array = []
@@ -122,9 +130,10 @@ def run_simulation(configs,config_name,pir_rates,colours, hotspot_config = defau
     static_energy = []
     max_delay = []
     results = []
+
     for config in configs:
         for pir in pir_rates:
-            results = get_results(pir,10000,False,0.05,config,config_name,hotspot_config)
+            results = get_results(pir,10000,False,0.05,config,config_name)
             global_average_delay.append(results[0])
             network_throughput.append(results[1])
             total_energy.append(results[2])
@@ -149,7 +158,7 @@ def run_simulation(configs,config_name,pir_rates,colours, hotspot_config = defau
         static_energy = []
         max_delay = []
 
-    plotresults(pir_rates,global_average_delay_array,network_throughput_array,max_delay_array,total_energy_array,dynamic_energy_array,static_energy_array,configs,colours)
+    plotresults(pir_rates,global_average_delay_array,network_throughput_array,max_delay_array,total_energy_array,dynamic_energy_array,static_energy_array,configs,colours,config_labels)
 
 
 
@@ -163,13 +172,19 @@ pir_rates = np.arange(0.001, 0.05, 0.003)
 
 
 buffers = [2,4,8,16]
-routing_algorithms = ["XY"] #,"WEST_FIRST","NORTH_LAST","NEGATIVE_FIRST","ODD_EVEN"]
-topologies = ["default_configMesh.yaml","default_configBfly.yaml","default_configBaseline.yaml","default_configOmega.yaml"]
+buffer_names = ["2 Flits", "4 Flits", "8 Flits", "16 Flits"]
+routing_algorithms = ["XY", "WEST_FIRST","NORTH_LAST","NEGATIVE_FIRST","ODD_EVEN"]
+routing_algorithms_names = ["XY", "West First", "North Last", "Negative First", 'Odd Even']
 
+topologies = ["default_configMesh.yaml","default_configBfly.yaml","default_configBaseline.yaml","default_configOmega.yaml"]
+topology_names = ["Mesh", "Butterfly", "Baseline", "Omega"]
 hotspot_config1 = ['1','2','3','4','9','10','11','12'] #[1,2,3,4,5,6,7,8]
 
+hotspot_configs = [hotspot_config1,default_hotspotsIDs]
+hotspot_names = ["Top Edge", "Top Left Rectangle"]
 
-
+buffer_selections = ["RANDOM", "BUFFER_LEVEL", "NOP"]
+buffer_selections_names = ["Random", "Buffer Level", "Nop"]
 
 step = 0.03
 
@@ -183,16 +198,20 @@ pir_rates = np.arange(0.001, 0.05, step)
 
 if '-b' in sys.argv[1:]:
     colorsb = [all_colors[i] for i in np.linspace(10, len(all_colors) - 1, 20).astype(int)]
-    run_simulation(buffers,"buffer",pir_rates,colorsb)
+    run_simulation(buffers,"buffer",buffer_names, pir_rates,colorsb)
 
 if '-r' in sys.argv[1:]:
-    colorsr = [all_colors[i] for i in np.linspace(10, len(all_colors) - 1, 20).astype(int)]
+    colorsr = [all_colors[i] for i in np.linspace(20, len(all_colors) - 1, 20).astype(int)]
 
-    run_simulation(routing_algorithms,"routing",pir_rates,colorsr)
+    run_simulation(routing_algorithms,"routing", routing_algorithms_names, pir_rates,colorsr)
 if '-t' in sys.argv[1:]:
-    colorst = [all_colors[i] for i in np.linspace(10, len(all_colors) - 1, 20).astype(int)]
-    run_simulation(topologies,"topology",pir_rates,colorst)
+    colorst = [all_colors[i] for i in np.linspace(30, len(all_colors) - 1, 20).astype(int)]
+    run_simulation(topologies,"topology",topology_names, pir_rates,colorst)
 
 if '-h' in sys.argv[1:]:
-    colorst = [all_colors[i] for i in np.linspace(10, len(all_colors) - 1, 20).astype(int)]
-    run_simulation(["HotspotConfig1"], 'hotspot', pir_rates,colorst, hotspot_config1)
+    colorsh = [all_colors[i] for i in np.linspace(40, len(all_colors) - 1, 20).astype(int)]
+    run_simulation(hotspot_configs, 'hotspot', hotspot_names, pir_rates,colorsh )
+
+if "-sel" in sys.argv[1:]:
+    colorss = [all_colors[i] for i in np.linspace(60, len(all_colors) - 1, 20).astype(int)]
+    run_simulation(buffer_selections, 'sel', buffer_selections_names, pir_rates,colorss )
