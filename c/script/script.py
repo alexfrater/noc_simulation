@@ -52,7 +52,7 @@ def get_results(packet_rate,cycles,hotspot, percentage ,config, config_name = No
     elif config_name == "hotspot":
         command = gen_command(default_config_file, cycles, packet_rate, percentage,config,default_buffer_depth, default_topology, default_routing,default_buffer_selection)
     elif config_name == 'sel':
-        command = gen_command(default_config_file, cycles, packet_rate, percentage,config,default_buffer_depth, default_topology, default_routing,config)
+        command = gen_command(default_config_file, cycles, packet_rate, percentage,default_hotspotsIDs,default_buffer_depth, default_topology, default_routing,config)
     try:
         output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, text=True)
         print(output)
@@ -171,12 +171,12 @@ pir_rates = np.arange(0.001, 0.05, 0.003)
 #A
 
 
-buffers = [2,4,8,16]
-buffer_names = ["2 Flits", "4 Flits", "8 Flits", "16 Flits"]
+buffers = [2,4,8,16,32]
+buffer_names = ["2 Flits", "4 Flits", "8 Flits", "16 Flits", "32 Flits"]
 routing_algorithms = ["XY", "WEST_FIRST","NORTH_LAST","NEGATIVE_FIRST","ODD_EVEN"]
 routing_algorithms_names = ["XY", "West First", "North Last", "Negative First", 'Odd Even']
 
-topologies = ["default_configMesh.yaml","default_configBfly.yaml","default_configBaseline.yaml","default_configOmega.yaml"]
+topologies = ["../config_examples/default_configMesh.yaml","default_configBfly.yaml","default_configBaseline.yaml","default_configOmega.yaml"]
 topology_names = ["Mesh", "Butterfly", "Baseline", "Omega"]
 hotspot_config1 = ['1','2','3','4','9','10','11','12'] #[1,2,3,4,5,6,7,8]
 
@@ -197,7 +197,7 @@ pir_rates = np.arange(0.001, 0.05, step)
 
 
 if '-b' in sys.argv[1:]:
-    colorsb = [all_colors[i] for i in np.linspace(10, len(all_colors) - 1, 20).astype(int)]
+    colorsb = [all_colors[i] for i in np.linspace(12, len(all_colors) - 1, 20).astype(int)]
     run_simulation(buffers,"buffer",buffer_names, pir_rates,colorsb)
 
 if '-r' in sys.argv[1:]:
@@ -213,5 +213,5 @@ if '-h' in sys.argv[1:]:
     run_simulation(hotspot_configs, 'hotspot', hotspot_names, pir_rates,colorsh )
 
 if "-sel" in sys.argv[1:]:
-    colorss = [all_colors[i] for i in np.linspace(60, len(all_colors) - 1, 20).astype(int)]
+    colorss = [all_colors[i] for i in np.linspace(63, len(all_colors) - 1, 20).astype(int)]
     run_simulation(buffer_selections, 'sel', buffer_selections_names, pir_rates,colorss )
